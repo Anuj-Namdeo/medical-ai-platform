@@ -1,0 +1,3 @@
+id,model_name,version,architecture,file_path,accuracy,precision,recall,f1_score,roc_auc,specificity,sensitivity,true_positives,true_negatives,false_positives,false_negatives,training_epochs,training_samples,val_samples,test_samples,hyperparameters,is_active,is_production,notes,trained_at,deployed_at
+1,densenet121,v1.0,DenseNet121 Transfer Learning,,0.9423,0.9156,0.9701,0.9421,0.9789,0.9023,0.9701,,,,,,,,,,1,1,,2026-06-05 07:49:14.629699,
+2,DenseNet121_v1,v1.0,densenet121,models/saved_models/densenet121.h5,0.9287,0.9341,0.9487,0.9413,0.9713,,,,,,,,,,,,1,0,,2026-06-06 05:56:34.657400,

@@ -1,0 +1,5 @@
+model_name,accuracy,precision,recall,f1_score,roc_auc,specificity,sensitivity
+custom_cnn,0.625,0.625,1.0,0.7692,0.5156,0.0,1.0
+resnet50,0.891,0.8966,0.9333,0.9146,0.9468,0.8205,0.9333
+densenet121,0.899,0.8674,0.9897,0.9246,0.9759,0.7479,0.9897
+efficientnetb0,0.6891,0.669,0.9949,0.8,0.9257,0.1795,0.9949

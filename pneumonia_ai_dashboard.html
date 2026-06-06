@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Medical AI Platform — Pneumonia Detection BI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2236;
+    --surface3: #1e2d45;
+    --border: rgba(96,165,250,0.12);
+    --border2: rgba(96,165,250,0.22);
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --accent3: #93c5fd;
+    --danger: #ef4444;
+    --danger2: #f87171;
+    --success: #10b981;
+    --success2: #34d399;
+    --warning: #f59e0b;
+    --warning2: #fbbf24;
+    --purple: #8b5cf6;
+    --purple2: #a78bfa;
+    --teal: #06b6d4;
+    --teal2: #22d3ee;
+    --coral: #f97316;
+    --coral2: #fb923c;
+    --font: 'Sora', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .app-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border2);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-icon {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-icon svg { width:18px; height:18px; fill: white; }
+  .brand-title { font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
+  .brand-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.04em; font-family: var(--mono); }
+  .header-meta {
+    display: flex; align-items: center; gap: 20px;
+  }
+  .badge-live {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--success2);
+    font-family: var(--mono); letter-spacing: 0.04em;
+  }
+  .dot-live {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--success2);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .header-date { font-size: 12px; color: var(--text3); font-family: var(--mono); }
+
+  /* NAVIGATION */
+  .nav-tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 0;
+  }
+  .nav-tab {
+    padding: 12px 22px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    letter-spacing: 0.04em;
+    transition: all 0.2s;
+    user-select: none;
+    font-family: var(--mono);
+    text-transform: uppercase;
+  }
+  .nav-tab:hover { color: var(--text); background: rgba(59,130,246,0.05); }
+  .nav-tab.active { color: var(--accent2); border-bottom-color: var(--accent); background: rgba(59,130,246,0.08); }
+
+  /* PAGES */
+  .page { display: none; padding: 28px 32px 40px; }
+  .page.active { display: block; }
+
+  /* SECTION LABEL */
+  .section-label {
+    font-size: 10px; font-family: var(--mono); color: var(--text3);
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 12px; padding-left: 2px;
+  }
+
+  /* KPI CARDS */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .kpi-card:hover { border-color: var(--border2); }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi-card.blue::before { background: var(--accent); }
+  .kpi-card.red::before { background: var(--danger); }
+  .kpi-card.green::before { background: var(--success); }
+  .kpi-card.purple::before { background: var(--purple); }
+  .kpi-card.teal::before { background: var(--teal); }
+  .kpi-card.warning::before { background: var(--warning); }
+  .kpi-label { font-size: 10px; font-family: var(--mono); color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .kpi-card.blue .kpi-value { color: var(--accent3); }
+  .kpi-card.red .kpi-value { color: var(--danger2); }
+  .kpi-card.green .kpi-value { color: var(--success2); }
+  .kpi-card.purple .kpi-value { color: var(--purple2); }
+  .kpi-card.teal .kpi-value { color: var(--teal2); }
+  .kpi-card.warning .kpi-value { color: var(--warning2); }
+  .kpi-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+  .kpi-icon {
+    position: absolute; right: 16px; top: 16px;
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .kpi-card.blue .kpi-icon { background: rgba(59,130,246,0.1); color: var(--accent2); }
+  .kpi-card.red .kpi-icon { background: rgba(239,68,68,0.1); color: var(--danger2); }
+  .kpi-card.green .kpi-icon { background: rgba(16,185,129,0.1); color: var(--success2); }
+  .kpi-card.purple .kpi-icon { background: rgba(139,92,246,0.1); color: var(--purple2); }
+  .kpi-card.teal .kpi-icon { background: rgba(6,182,212,0.1); color: var(--teal2); }
+  .kpi-card.warning .kpi-icon { background: rgba(245,158,11,0.1); color: var(--warning2); }
+
+  /* CHART CARDS */
+  .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .chart-grid-3-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .chart-title { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 4px; letter-spacing: 0.03em; text-transform: uppercase; font-family: var(--mono); }
+  .chart-sub { font-size: 11px; color: var(--text3); margin-bottom: 16px; font-family: var(--mono); }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* TABLES */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    text-align: left; padding: 10px 14px;
+    font-size: 10px; font-family: var(--mono); color: var(--text3);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .data-table td {
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(96,165,250,0.06);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(59,130,246,0.04); }
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%;
+    font-size: 10px; font-weight: 600; font-family: var(--mono);
+  }
+  .rank-1 { background: rgba(245,158,11,0.15); color: var(--warning2); border: 1px solid rgba(245,158,11,0.3); }
+  .rank-2 { background: rgba(148,163,184,0.12); color: #94a3b8; border: 1px solid rgba(148,163,184,0.2); }
+  .rank-3 { background: rgba(249,115,22,0.12); color: var(--coral2); border: 1px solid rgba(249,115,22,0.2); }
+  .rank-4 { background: rgba(100,116,139,0.1); color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
+
+  /* STATUS BADGES */
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-family: var(--mono);
+    letter-spacing: 0.04em;
+    font-weight: 500;
+  }
+  .badge-prod { background: rgba(16,185,129,0.12); color: var(--success2); border: 1px solid rgba(16,185,129,0.25); }
+  .badge-test { background: rgba(245,158,11,0.12); color: var(--warning2); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-best { background: rgba(139,92,246,0.12); color: var(--purple2); border: 1px solid rgba(139,92,246,0.25); }
+  .badge-high { background: rgba(239,68,68,0.12); color: var(--danger2); border: 1px solid rgba(239,68,68,0.25); }
+  .badge-med { background: rgba(245,158,11,0.12); color: var(--warning2); border: 1px solid rgba(245,158,11,0.25); }
+  .badge-low { background: rgba(16,185,129,0.12); color: var(--success2); border: 1px solid rgba(16,185,129,0.25); }
+
+  /* SCORE BAR */
+  .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .score-bar-track { flex: 1; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 2px; }
+  .score-val { font-family: var(--mono); font-size: 11px; color: var(--text2); min-width: 38px; text-align: right; }
+
+  /* DONUT LEGEND */
+  .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .legend-label { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .legend-val { font-size: 12px; font-weight: 600; color: var(--text); font-family: var(--mono); margin-left: auto; }
+
+  /* RECOMMENDATION BOX */
+  .rec-box {
+    background: rgba(139,92,246,0.06);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-top: 14px;
+  }
+  .rec-box-title { font-size: 11px; font-family: var(--mono); color: var(--purple2); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 8px; }
+  .rec-box-body { font-size: 13px; color: var(--text); line-height: 1.7; }
+
+  .alert-box {
+    background: rgba(239,68,68,0.06);
+    border: 1px solid rgba(239,68,68,0.18);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--danger2);
+    font-family: var(--mono);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* STAT ROW */
+  .stat-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .stat-mini {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-align: center;
+  }
+  .stat-mini-val { font-size: 20px; font-weight: 700; font-family: var(--mono); }
+  .stat-mini-lbl { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+
+  /* INSIGHT CARDS */
+  .insight-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .insight-num { font-size: 24px; font-weight: 700; font-family: var(--mono); }
+  .insight-lbl { font-size: 11px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+
+  /* PAGE TITLE */
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.01em; }
+  .page-desc { font-size: 12px; color: var(--text3); font-family: var(--mono); margin-bottom: 22px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* FOOTER */
+  .dash-footer {
+    margin-top: 32px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .footer-text { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+  /* MODEL PARAMS VISUAL */
+  .param-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .param-name { font-size: 11px; font-family: var(--mono); color: var(--text2); width: 130px; flex-shrink: 0; }
+  .param-track { flex: 1; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+  .param-fill { height: 100%; border-radius: 3px; }
+  .param-count { font-size: 10px; font-family: var(--mono); color: var(--text3); min-width: 60px; text-align: right; }
+
+  /* TREND INDICATOR */
+  .trend-up { color: var(--danger2); font-size: 11px; font-family: var(--mono); }
+  .trend-down { color: var(--success2); font-size: 11px; font-family: var(--mono); }
+
+  .full-width { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-title">MedAI Platform — Pneumonia Detection</div>
+      <div class="brand-sub">Business Intelligence Dashboard &nbsp;·&nbsp; v2.0 Analytics</div>
+    </div>
+  </div>
+  <div class="header-meta">
+    <div class="badge-live"><div class="dot-live"></div>LIVE</div>
+    <div class="header-date">Report Date: 2026-06-06 &nbsp;|&nbsp; Refresh: Real-time</div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-tabs">
+  <div class="nav-tab active" onclick="showPage('exec')">📊 Executive Dashboard</div>
+  <div class="nav-tab" onclick="showPage('demo')">👥 Demographics</div>
+  <div class="nav-tab" onclick="showPage('model')">🤖 Model Performance</div>
+</nav>
+
+<!-- ===================== PAGE 1: EXECUTIVE ===================== -->
+<div id="page-exec" class="page active">
+  <div class="page-title">Executive Dashboard</div>
+  <div class="page-desc">Medical AI Pneumonia Detection Platform &nbsp;·&nbsp; All Hospitals &nbsp;·&nbsp; Dec 2025 – Jun 2026</div>
+
+  <!-- KPI CARDS ROW 1 -->
+  <div class="section-label">Core KPIs</div>
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-icon">👥</div>
+      <div class="kpi-label">Total Patients</div>
+      <div class="kpi-value">200</div>
+      <div class="kpi-sub">Active in platform</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-icon">🔬</div>
+      <div class="kpi-label">Total Predictions</div>
+      <div class="kpi-value">397</div>
+      <div class="kpi-sub">Avg 1.99/patient</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-icon">⚠️</div>
+      <div class="kpi-label">Pneumonia Cases</div>
+      <div class="kpi-value">264</div>
+      <div class="kpi-sub">Positive detections</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-icon">✅</div>
+      <div class="kpi-label">Normal Cases</div>
+      <div class="kpi-value">133</div>
+      <div class="kpi-sub">Clear diagnostics</div>
+    </div>
+  </div>
+
+  <!-- KPI CARDS ROW 2 -->
+  <div class="kpi-grid" style="margin-bottom:24px;">
+    <div class="kpi-card red">
+      <div class="kpi-icon">📈</div>
+      <div class="kpi-label">Pneumonia Rate</div>
+      <div class="kpi-value">66.50%</div>
+      <div class="kpi-sub"><span class="trend-up">▲ High risk population</span></div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-icon">🎯</div>
+      <div class="kpi-label">Avg Confidence</div>
+      <div class="kpi-value">53.48%</div>
+      <div class="kpi-sub">Threshold: 0.50</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-icon">📅</div>
+      <div class="kpi-label">Last 30 Days</div>
+      <div class="kpi-value">73</div>
+      <div class="kpi-sub">Predictions (May–Jun)</div>
+    </div>
+    <div class="kpi-card warning">
+      <div class="kpi-icon">🏥</div>
+      <div class="kpi-label">Hospitals</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">Apollo · City · Metro · NMI · St.Mary</div>
+    </div>
+  </div>
+
+  <!-- MAIN CHARTS ROW -->
+  <div class="chart-grid-3-1">
+    <!-- MONTHLY TREND -->
+    <div class="chart-card">
+      <div class="chart-title">Monthly Prediction Trend</div>
+      <div class="chart-sub">PNEUMONIA vs NORMAL — Dec 2025 to Jun 2026</div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="monthlyTrend" role="img" aria-label="Stacked bar chart of monthly predictions showing pneumonia vs normal cases from December 2025 to June 2026">Monthly trend data.</canvas>
+      </div>
+    </div>
+    <!-- DONUT -->
+    <div class="chart-card">
+      <div class="chart-title">Prediction Distribution</div>
+      <div class="chart-sub">Overall split by label</div>
+      <div class="chart-wrap" style="height:180px; margin-bottom:12px;">
+        <canvas id="donutChart" role="img" aria-label="Donut chart showing 66.5% pneumonia and 33.5% normal predictions">Distribution data.</canvas>
+      </div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ef4444;"></div><div class="legend-label">PNEUMONIA</div><div class="legend-val">264 · 66.5%</div></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#10b981;"></div><div class="legend-label">NORMAL</div><div class="legend-val">133 · 33.5%</div></div>
+    </div>
+  </div>
+
+  <!-- CONFIDENCE + HOSPITAL ROW -->
+  <div class="chart-grid-2">
+    <!-- CONFIDENCE DISTRIBUTION -->
+    <div class="chart-card">
+      <div class="chart-title">Confidence Score Distribution</div>
+      <div class="chart-sub">Predictions by confidence band and label</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="confDist" role="img" aria-label="Grouped bar chart showing confidence score distribution by prediction label">Confidence distribution.</canvas>
+      </div>
+    </div>
+    <!-- HOSPITAL COMPARISON -->
+    <div class="chart-card">
+      <div class="chart-title">Hospital Pneumonia Rate</div>
+      <div class="chart-sub">% of predictions flagged PNEUMONIA by institution</div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="hospChart" role="img" aria-label="Horizontal bar chart of pneumonia rates across 5 hospitals">Hospital data.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEPARTMENT TABLE -->
+  <div class="chart-card" style="margin-bottom:14px;">
+    <div class="chart-title">Department Performance Summary</div>
+    <div class="chart-sub">Predictions and pneumonia detection by clinical department</div>
+    <div style="margin-top:4px;">
+      <table class="data-table">
+        <thead><tr>
+          <th>Department</th><th>Total Predictions</th><th>Pneumonia</th><th>Normal</th><th>Pneumonia Rate</th><th>Risk Level</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Emergency</td><td>58</td><td>42</td><td>16</td><td>72.41%</td><td><span class="status-badge badge-high">HIGH</span></td></tr>
+          <tr><td>OPD</td><td>87</td><td>58</td><td>29</td><td>66.67%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+          <tr><td>Radiology</td><td>69</td><td>46</td><td>23</td><td>66.67%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+          <tr><td>Pulmonology</td><td>97</td><td>64</td><td>33</td><td>65.98%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+          <tr><td>ICU</td><td>86</td><td>54</td><td>32</td><td>62.79%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    <div class="footer-text">Data source: MedAI Platform DB Export · Generated 2026-06-06 · Model: DenseNet121 v1.0</div>
+    <div class="footer-text">PHD PROJECT REPORT — CHAPTER 7: BI Dashboard & Model Analytics</div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 2: DEMOGRAPHICS ===================== -->
+<div id="page-demo" class="page">
+  <div class="page-title">Patient Demographics Dashboard</div>
+  <div class="page-desc">Age group · Gender · Risk profile analysis &nbsp;·&nbsp; 200 registered patients</div>
+
+  <div class="alert-box">
+    <span>⚠️</span>
+    Dataset contains NO pediatric patients (age 0–17). All 200 patients are adults aged 18–85. Child and Adolescent age groups are empty — this should be noted as a dataset limitation.
+  </div>
+
+  <!-- DEMOGRAPHIC KPIs -->
+  <div class="section-label">Patient Demographics Overview</div>
+  <div class="stat-row">
+    <div class="stat-mini"><div class="stat-mini-val" style="color:var(--accent2);">200</div><div class="stat-mini-lbl">Total Patients</div></div>
+    <div class="stat-mini"><div class="stat-mini-val" style="color:var(--warning2);">52.2</div><div class="stat-mini-lbl">Avg Age (yrs)</div></div>
+    <div class="stat-mini"><div class="stat-mini-val" style="color:var(--success2);">18</div><div class="stat-mini-lbl">Min Age</div></div>
+    <div class="stat-mini"><div class="stat-mini-val" style="color:var(--danger2);">85</div><div class="stat-mini-lbl">Max Age</div></div>
+    <div class="stat-mini"><div class="stat-mini-val" style="color:var(--purple2);">3</div><div class="stat-mini-lbl">Genders</div></div>
+    <div class="stat-mini"><div class="stat-mini-val" style="color:var(--teal2);">61%</div><div class="stat-mini-lbl">Middle Age+</div></div>
+  </div>
+
+  <!-- AGE + GENDER CHARTS -->
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Patient Count by Age Group</div>
+      <div class="chart-sub">Distribution across 4 active age cohorts</div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="ageCount" role="img" aria-label="Bar chart of patient counts by age group">Age group counts.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Pneumonia Rate by Age Group</div>
+      <div class="chart-sub">% of predictions flagged as PNEUMONIA per age cohort</div>
+      <div class="chart-wrap" style="height:240px;">
+        <canvas id="agePneu" role="img" aria-label="Bar chart of pneumonia rates by age group">Age pneumonia rates.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-grid-2">
+    <!-- GENDER SPLIT -->
+    <div class="chart-card">
+      <div class="chart-title">Patient Count by Gender</div>
+      <div class="chart-sub">Gender distribution across 200 patients</div>
+      <div class="chart-wrap" style="height:200px; margin-bottom:12px;">
+        <canvas id="genderDonut" role="img" aria-label="Donut chart showing gender split: Other 73, Female 68, Male 59">Gender split.</canvas>
+      </div>
+      <div class="legend-row"><div class="legend-dot" style="background:#8b5cf6;"></div><div class="legend-label">Other</div><div class="legend-val">73 · 36.5%</div></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#ec4899;"></div><div class="legend-label">Female</div><div class="legend-val">68 · 34.0%</div></div>
+      <div class="legend-row"><div class="legend-dot" style="background:#3b82f6;"></div><div class="legend-label">Male</div><div class="legend-val">59 · 29.5%</div></div>
+    </div>
+    <!-- GENDER PNEUMONIA RATE -->
+    <div class="chart-card">
+      <div class="chart-title">Pneumonia Rate by Gender</div>
+      <div class="chart-sub">Males show highest pneumonia detection rate at 74.58%</div>
+      <div class="chart-wrap" style="height:200px; margin-bottom:12px;">
+        <canvas id="genderPneu" role="img" aria-label="Bar chart showing pneumonia rates by gender: Female 62.41%, Male 74.58%, Other 63.70%">Gender pneumonia rates.</canvas>
+      </div>
+      <div style="margin-top:8px;">
+        <div class="legend-row"><div class="legend-dot" style="background:#3b82f6;"></div><div class="legend-label">Male (Highest)</div><div class="legend-val" style="color:var(--danger2);">74.58%</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#8b5cf6;"></div><div class="legend-label">Other</div><div class="legend-val">63.70%</div></div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ec4899;"></div><div class="legend-label">Female (Lowest)</div><div class="legend-val" style="color:var(--success2);">62.41%</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RISK PROFILE TABLE -->
+  <div class="chart-card" style="margin-bottom:14px;">
+    <div class="chart-title">Patient Risk Profile Summary</div>
+    <div class="chart-sub">Categorized by predicted pneumonia rate per patient (all predictions)</div>
+    <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:12px; margin-top:12px;">
+      <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.18); border-radius:8px; padding:16px; text-align:center;">
+        <div style="font-size:32px; font-weight:700; color:var(--danger2); font-family:var(--mono);">122</div>
+        <div style="font-size:11px; color:var(--text3); margin-top:4px; text-transform:uppercase; letter-spacing:0.06em;">HIGH RISK</div>
+        <div style="font-size:11px; color:var(--text2); margin-top:6px;">&gt;66% pneumonia predictions</div>
+        <div style="font-size:20px; font-weight:600; color:var(--danger2); margin-top:8px;">61.0%</div>
+        <div style="font-size:10px; color:var(--text3);">of all patients</div>
+      </div>
+      <div style="background:rgba(245,158,11,0.06); border:1px solid rgba(245,158,11,0.18); border-radius:8px; padding:16px; text-align:center;">
+        <div style="font-size:32px; font-weight:700; color:var(--warning2); font-family:var(--mono);">49</div>
+        <div style="font-size:11px; color:var(--text3); margin-top:4px; text-transform:uppercase; letter-spacing:0.06em;">MEDIUM RISK</div>
+        <div style="font-size:11px; color:var(--text2); margin-top:6px;">33–66% pneumonia predictions</div>
+        <div style="font-size:20px; font-weight:600; color:var(--warning2); margin-top:8px;">24.5%</div>
+        <div style="font-size:10px; color:var(--text3);">of all patients</div>
+      </div>
+      <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.18); border-radius:8px; padding:16px; text-align:center;">
+        <div style="font-size:32px; font-weight:700; color:var(--success2); font-family:var(--mono);">29</div>
+        <div style="font-size:11px; color:var(--text3); margin-top:4px; text-transform:uppercase; letter-spacing:0.06em;">LOW RISK</div>
+        <div style="font-size:11px; color:var(--text2); margin-top:6px;">&lt;33% pneumonia predictions</div>
+        <div style="font-size:20px; font-weight:600; color:var(--success2); margin-top:8px;">14.5%</div>
+        <div style="font-size:10px; color:var(--text3);">of all patients</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGE-GENDER DETAILED TABLE -->
+  <div class="chart-card">
+    <div class="chart-title">Detailed Demographic Breakdown</div>
+    <div class="chart-sub">Pneumonia cases and rates by age group and gender cohort</div>
+    <table class="data-table" style="margin-top:8px;">
+      <thead><tr>
+        <th>Age Group</th><th>Patients</th><th>Total Pred.</th><th>Pneumonia</th><th>Normal</th><th>Pneumonia Rate</th><th>Risk Level</th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Child (0–11)</td><td style="color:var(--text3);">0</td><td style="color:var(--text3);">—</td><td style="color:var(--text3);">—</td><td style="color:var(--text3);">—</td><td style="color:var(--text3);">N/A</td><td><span class="status-badge" style="background:rgba(100,116,139,0.1);color:#64748b;border:1px solid rgba(100,116,139,0.2);font-size:10px;padding:2px 8px;border-radius:999px;font-family:var(--mono);">NO DATA</span></td></tr>
+        <tr><td>Adolescent (12–17)</td><td style="color:var(--text3);">0</td><td style="color:var(--text3);">—</td><td style="color:var(--text3);">—</td><td style="color:var(--text3);">—</td><td style="color:var(--text3);">N/A</td><td><span class="status-badge" style="background:rgba(100,116,139,0.1);color:#64748b;border:1px solid rgba(100,116,139,0.2);font-size:10px;padding:2px 8px;border-radius:999px;font-family:var(--mono);">NO DATA</span></td></tr>
+        <tr><td>Young Adult (18–34)</td><td>45</td><td>81</td><td>51</td><td>30</td><td>62.96%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+        <tr><td>Middle Age (35–54)</td><td>61</td><td>117</td><td>84</td><td>33</td><td style="color:var(--danger2);font-weight:600;">71.79%</td><td><span class="status-badge badge-high">HIGHEST</span></td></tr>
+        <tr><td>Senior (55–69)</td><td>50</td><td>102</td><td>68</td><td>34</td><td>66.67%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+        <tr><td>Elderly (70+)</td><td>44</td><td>97</td><td>61</td><td>36</td><td>62.89%</td><td><span class="status-badge badge-med">MEDIUM</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dash-footer">
+    <div class="footer-text">Demographic Analysis · 200 patients · 5 hospitals · Ages 18–85</div>
+    <div class="footer-text">Note: Dataset contains adult patients only — no pediatric cases</div>
+  </div>
+</div>
+
+<!-- ===================== PAGE 3: MODEL PERFORMANCE ===================== -->
+<div id="page-model" class="page">
+  <div class="page-title">Model Performance Dashboard</div>
+  <div class="page-desc">Comparative analysis of 4 CNN architectures &nbsp;·&nbsp; Binary pneumonia classification</div>
+
+  <!-- MODEL KPIs -->
+  <div class="section-label">Performance at a Glance — Best Model (DenseNet121)</div>
+  <div class="kpi-grid" style="margin-bottom:20px;">
+    <div class="kpi-card green"><div class="kpi-icon">🎯</div><div class="kpi-label">Accuracy</div><div class="kpi-value">94.23%</div><div class="kpi-sub">DenseNet121 v1.0</div></div>
+    <div class="kpi-card blue"><div class="kpi-icon">🔍</div><div class="kpi-label">Precision</div><div class="kpi-value">91.56%</div><div class="kpi-sub">Low false positives</div></div>
+    <div class="kpi-card red"><div class="kpi-icon">📡</div><div class="kpi-label">Recall</div><div class="kpi-value">97.01%</div><div class="kpi-sub">Critical sensitivity</div></div>
+    <div class="kpi-card purple"><div class="kpi-icon">⚡</div><div class="kpi-label">ROC-AUC</div><div class="kpi-value">97.89%</div><div class="kpi-sub">Discrimination power</div></div>
+  </div>
+
+  <!-- MODEL RANKING TABLE -->
+  <div class="chart-card" style="margin-bottom:14px;">
+    <div class="chart-title">Model Ranking — Best to Worst</div>
+    <div class="chart-sub">All 4 architectures ranked by composite clinical performance score</div>
+    <table class="data-table" style="margin-top:8px;">
+      <thead><tr>
+        <th>#</th><th>Model</th><th>Parameters</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1 Score</th><th>ROC-AUC</th><th>Specificity</th><th>Status</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="rank-badge rank-1">1</span></td>
+          <td style="font-weight:600; color:var(--warning2);">DenseNet121</td>
+          <td>7.70M</td>
+          <td style="color:var(--success2);">94.23%</td>
+          <td>91.56%</td>
+          <td style="color:var(--success2);">97.01%</td>
+          <td style="color:var(--success2);">94.21%</td>
+          <td style="color:var(--success2);">97.89%</td>
+          <td>90.23%</td>
+          <td><span class="status-badge badge-prod">PRODUCTION</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge rank-2">2</span></td>
+          <td>EfficientNetB0</td>
+          <td>4.84M</td>
+          <td>92.10%</td>
+          <td>90.80%</td>
+          <td>94.50%</td>
+          <td>92.61%</td>
+          <td>95.40%</td>
+          <td>89.30%</td>
+          <td><span class="status-badge badge-test">EVALUATED</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge rank-3">3</span></td>
+          <td>ResNet50</td>
+          <td>24.77M</td>
+          <td>90.50%</td>
+          <td>88.60%</td>
+          <td>92.40%</td>
+          <td>90.46%</td>
+          <td>93.20%</td>
+          <td>87.80%</td>
+          <td><span class="status-badge badge-test">EVALUATED</span></td>
+        </tr>
+        <tr>
+          <td><span class="rank-badge rank-4">4</span></td>
+          <td>Custom CNN</td>
+          <td>1.44M</td>
+          <td>86.30%</td>
+          <td>83.40%</td>
+          <td>88.20%</td>
+          <td>85.73%</td>
+          <td>88.60%</td>
+          <td>83.10%</td>
+          <td><span class="status-badge badge-test">BASELINE</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PERFORMANCE CHARTS -->
+  <div class="chart-grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Multi-Metric Comparison</div>
+      <div class="chart-sub">Accuracy · Precision · Recall · F1 · AUC per model</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="modelRadar" role="img" aria-label="Grouped bar chart comparing 5 metrics across 4 AI models">Model metric comparison.</canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Model Size vs Accuracy</div>
+      <div class="chart-sub">Parameter count (millions) vs classification accuracy</div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="sizeAcc" role="img" aria-label="Scatter chart showing model parameter count versus accuracy">Model size vs accuracy.</canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCORE BARS -->
+  <div class="chart-grid-2" style="margin-bottom:14px;">
+    <div class="chart-card">
+      <div class="chart-title">ROC-AUC Ranking</div>
+      <div class="chart-sub">Discrimination ability — higher is better</div>
+      <div style="margin-top:14px;">
+        <div class="param-bar-row"><div class="param-name">DenseNet121</div><div class="param-track"><div class="param-fill" style="width:97.89%; background:var(--warning2);"></div></div><div class="param-count">97.89%</div></div>
+        <div class="param-bar-row"><div class="param-name">EfficientNetB0</div><div class="param-track"><div class="param-fill" style="width:95.4%; background:var(--accent);"></div></div><div class="param-count">95.40%</div></div>
+        <div class="param-bar-row"><div class="param-name">ResNet50</div><div class="param-track"><div class="param-fill" style="width:93.2%; background:var(--coral);"></div></div><div class="param-count">93.20%</div></div>
+        <div class="param-bar-row"><div class="param-name">Custom CNN</div><div class="param-track"><div class="param-fill" style="width:88.6%; background:var(--text3);"></div></div><div class="param-count">88.60%</div></div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Model Parameter Count</div>
+      <div class="chart-sub">Computational complexity (millions of parameters)</div>
+      <div style="margin-top:14px;">
+        <div class="param-bar-row"><div class="param-name">ResNet50</div><div class="param-track"><div class="param-fill" style="width:100%; background:var(--danger);"></div></div><div class="param-count">24.77M</div></div>
+        <div class="param-bar-row"><div class="param-name">DenseNet121</div><div class="param-track"><div class="param-fill" style="width:31.1%; background:var(--warning);"></div></div><div class="param-count">7.70M</div></div>
+        <div class="param-bar-row"><div class="param-name">EfficientNetB0</div><div class="param-track"><div class="param-fill" style="width:19.5%; background:var(--accent);"></div></div><div class="param-count">4.84M</div></div>
+        <div class="param-bar-row"><div class="param-name">Custom CNN</div><div class="param-track"><div class="param-fill" style="width:5.8%; background:var(--text3);"></div></div><div class="param-count">1.44M</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F1 CHART -->
+  <div class="chart-card" style="margin-bottom:14px;">
+    <div class="chart-title">F1 Score Comparison — All Models</div>
+    <div class="chart-sub">Harmonic mean of precision and recall — clinical classification quality</div>
+    <div class="chart-wrap" style="height:180px;">
+      <canvas id="f1Chart" role="img" aria-label="Bar chart comparing F1 scores of four models">F1 score comparison.</canvas>
+    </div>
+  </div>
+
+  <!-- RECOMMENDATION -->
+  <div class="rec-box">
+    <div class="rec-box-title">🏆 Production Deployment Recommendation</div>
+    <div class="rec-box-body">
+      <strong style="color:var(--purple2);">DenseNet121 v1.0</strong> is the recommended production model. It achieves the highest ROC-AUC (97.89%), Accuracy (94.23%), and Recall (97.01%) among all evaluated architectures. With only 7.70M parameters — far fewer than ResNet50's 24.77M — it provides superior clinical performance with significantly lower computational overhead. Its 97.01% recall is especially critical in a medical screening context, minimising dangerous false negatives (missed pneumonia cases). The model is currently flagged <code style="background:rgba(16,185,129,0.1);color:var(--success2);padding:2px 6px;border-radius:4px;font-size:11px;">is_production = 1</code> in the database and actively deployed. EfficientNetB0 is recommended as a lightweight backup or edge-deployment alternative.
+    </div>
+  </div>
+
+  <div class="dash-footer">
+    <div class="footer-text">Model metadata: custom_cnn · densenet121 · efficientnetb0 · resnet50 · All input: 224×224×3 → Binary output</div>
+    <div class="footer-text">Threshold: 0.50 · Binary Cross-Entropy Loss · Transfer Learning (DenseNet121, EfficientNetB0, ResNet50)</div>
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const tabs = ['exec','demo','model'];
+  document.querySelectorAll('.nav-tab')[tabs.indexOf(id)].classList.add('active');
+}
+
+const MONTHS = ['Dec-25','Jan-26','Feb-26','Mar-26','Apr-26','May-26','Jun-26'];
+const PNEU = [35,44,38,38,52,49,8];
+const NORM = [24,37,14,12,20,22,4];
+const TOTAL = PNEU.map((p,i) => p+NORM[i]);
+
+// Chart defaults
+Chart.defaults.color = '#64748b';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 11;
+
+// 1. Monthly Trend
+new Chart(document.getElementById('monthlyTrend'), {
+  type: 'bar',
+  data: {
+    labels: MONTHS,
+    datasets: [
+      { label: 'PNEUMONIA', data: PNEU, backgroundColor: 'rgba(239,68,68,0.75)', borderColor: '#ef4444', borderWidth: 0, borderRadius: 3 },
+      { label: 'NORMAL', data: NORM, backgroundColor: 'rgba(16,185,129,0.65)', borderColor: '#10b981', borderWidth: 0, borderRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { stacked: true, grid: { color: 'rgba(96,165,250,0.05)' }, ticks: { autoSkip: false } },
+      y: { stacked: true, grid: { color: 'rgba(96,165,250,0.08)' }, beginAtZero: true }
+    }
+  }
+});
+
+// 2. Donut
+new Chart(document.getElementById('donutChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['PNEUMONIA','NORMAL'],
+    datasets: [{ data: [264,133], backgroundColor: ['#ef4444','#10b981'], borderColor: '#111827', borderWidth: 3 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+});
+
+// 3. Confidence Distribution
+new Chart(document.getElementById('confDist'), {
+  type: 'bar',
+  data: {
+    labels: ['0–25%','25–50%','50–75%','75–100%'],
+    datasets: [
+      { label: 'NORMAL', data: [24,31,40,38], backgroundColor: 'rgba(16,185,129,0.7)', borderRadius: 3 },
+      { label: 'PNEUMONIA', data: [44,81,71,68], backgroundColor: 'rgba(239,68,68,0.7)', borderRadius: 3 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(96,165,250,0.05)' } },
+      y: { grid: { color: 'rgba(96,165,250,0.08)' }, beginAtZero: true }
+    }
+  }
+});
+
+// 4. Hospital Chart
+new Chart(document.getElementById('hospChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Apollo Diag.','Metro Clinic','City General','Nat. Medical','St. Mary'],
+    datasets: [{ 
+      label: 'Pneumonia Rate %', 
+      data: [69.89, 71.05, 66.27, 62.67, 61.43],
+      backgroundColor: ['rgba(239,68,68,0.75)','rgba(239,68,68,0.75)','rgba(245,158,11,0.7)','rgba(16,185,129,0.7)','rgba(16,185,129,0.7)'],
+      borderRadius: 3
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { min: 55, max: 78, grid: { color: 'rgba(96,165,250,0.08)' } },
+      y: { grid: { display: false } }
+    }
+  }
+});
+
+// 5. Age Count
+new Chart(document.getElementById('ageCount'), {
+  type: 'bar',
+  data: {
+    labels: ['Young Adult\n18–34','Middle Age\n35–54','Senior\n55–69','Elderly\n70+'],
+    datasets: [{ 
+      label: 'Patients', 
+      data: [45,61,50,44],
+      backgroundColor: ['rgba(59,130,246,0.7)','rgba(139,92,246,0.7)','rgba(6,182,212,0.7)','rgba(245,158,11,0.7)'],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(96,165,250,0.05)' } },
+      y: { grid: { color: 'rgba(96,165,250,0.08)' }, beginAtZero: true }
+    }
+  }
+});
+
+// 6. Age Pneumonia Rate
+new Chart(document.getElementById('agePneu'), {
+  type: 'bar',
+  data: {
+    labels: ['Young Adult\n18–34','Middle Age\n35–54','Senior\n55–69','Elderly\n70+'],
+    datasets: [{
+      label: 'Pneumonia Rate %',
+      data: [62.96, 71.79, 66.67, 62.89],
+      backgroundColor: ['rgba(245,158,11,0.7)','rgba(239,68,68,0.85)','rgba(239,68,68,0.6)','rgba(245,158,11,0.55)'],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(96,165,250,0.05)' } },
+      y: { min: 55, max: 78, grid: { color: 'rgba(96,165,250,0.08)' } }
+    }
+  }
+});
+
+// 7. Gender Donut
+new Chart(document.getElementById('genderDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Other','Female','Male'],
+    datasets: [{ data: [73,68,59], backgroundColor: ['#8b5cf6','#ec4899','#3b82f6'], borderColor: '#111827', borderWidth: 3 }]
+  },
+  options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+});
+
+// 8. Gender Pneumonia Rate
+new Chart(document.getElementById('genderPneu'), {
+  type: 'bar',
+  data: {
+    labels: ['Female','Male','Other'],
+    datasets: [{
+      label: 'Pneumonia Rate %',
+      data: [62.41, 74.58, 63.70],
+      backgroundColor: ['rgba(236,72,153,0.7)','rgba(59,130,246,0.85)','rgba(139,92,246,0.7)'],
+      borderRadius: 4
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(96,165,250,0.05)' } },
+      y: { min: 55, max: 80, grid: { color: 'rgba(96,165,250,0.08)' } }
+    }
+  }
+});
+
+// 9. Model Multi-Metric Grouped Bar
+const models = ['DenseNet121','EfficientNetB0','ResNet50','Custom CNN'];
+new Chart(document.getElementById('modelRadar'), {
+  type: 'bar',
+  data: {
+    labels: ['Accuracy','Precision','Recall','F1 Score','ROC-AUC'],
+    datasets: [
+      { label: 'DenseNet121', data: [94.23,91.56,97.01,94.21,97.89], backgroundColor: 'rgba(245,158,11,0.8)', borderRadius: 2 },
+      { label: 'EfficientNetB0', data: [92.10,90.80,94.50,92.61,95.40], backgroundColor: 'rgba(59,130,246,0.75)', borderRadius: 2 },
+      { label: 'ResNet50', data: [90.50,88.60,92.40,90.46,93.20], backgroundColor: 'rgba(249,115,22,0.7)', borderRadius: 2 },
+      { label: 'Custom CNN', data: [86.30,83.40,88.20,85.73,88.60], backgroundColor: 'rgba(100,116,139,0.6)', borderRadius: 2 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(96,165,250,0.05)' } },
+      y: { min: 80, max: 100, grid: { color: 'rgba(96,165,250,0.08)' } }
+    }
+  }
+});
+
+// 10. Size vs Accuracy Scatter
+new Chart(document.getElementById('sizeAcc'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      { label: 'DenseNet121', data: [{x:7.70,y:94.23}], backgroundColor: '#f59e0b', pointRadius: 12, pointHoverRadius: 14 },
+      { label: 'EfficientNetB0', data: [{x:4.84,y:92.10}], backgroundColor: '#3b82f6', pointRadius: 10, pointHoverRadius: 12 },
+      { label: 'ResNet50', data: [{x:24.77,y:90.50}], backgroundColor: '#ef4444', pointRadius: 10, pointHoverRadius: 12 },
+      { label: 'Custom CNN', data: [{x:1.44,y:86.30}], backgroundColor: '#64748b', pointRadius: 9, pointHoverRadius: 11 }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}% acc · ${ctx.parsed.x}M params`
+        }
+      }
+    },
+    scales: {
+      x: { title: { display: true, text: 'Parameters (M)', color: '#64748b' }, grid: { color: 'rgba(96,165,250,0.08)' }, min: 0, max: 28 },
+      y: { title: { display: true, text: 'Accuracy (%)', color: '#64748b' }, grid: { color: 'rgba(96,165,250,0.08)' }, min: 82, max: 97 }
+    }
+  }
+});
+
+// 11. F1 Score Bar
+new Chart(document.getElementById('f1Chart'), {
+  type: 'bar',
+  data: {
+    labels: ['DenseNet121','EfficientNetB0','ResNet50','Custom CNN'],
+    datasets: [{
+      label: 'F1 Score %',
+      data: [94.21, 92.61, 90.46, 85.73],
+      backgroundColor: ['rgba(245,158,11,0.85)','rgba(59,130,246,0.75)','rgba(249,115,22,0.7)','rgba(100,116,139,0.55)'],
+      borderRadius: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(96,165,250,0.05)' } },
+      y: { min: 80, max: 98, grid: { color: 'rgba(96,165,250,0.08)' } }
+    }
+  }
+});
+</script>
+</body>
+</html>

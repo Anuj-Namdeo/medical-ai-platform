@@ -1,0 +1,7 @@
+{
+  "model_name": "resnet50",
+  "saved_at": "2026-06-05T21:09:03.518508",
+  "parameters": 24771457,
+  "input_shape": "(None, 224, 224, 3)",
+  "output_shape": "(None, 1)"
+}

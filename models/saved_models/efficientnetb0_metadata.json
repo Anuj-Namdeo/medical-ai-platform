@@ -1,0 +1,7 @@
+{
+  "model_name": "efficientnetb0",
+  "saved_at": "2026-06-06T09:44:42.838429",
+  "parameters": 4840100,
+  "input_shape": "(None, 224, 224, 3)",
+  "output_shape": "(None, 1)"
+}

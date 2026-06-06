@@ -1,0 +1,26 @@
+# render.yaml — Render.com deployment configuration
+# Deploy at: https://dashboard.render.com
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: medical-ai-platform
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt && python src/database.py
+    startCommand: streamlit run app/streamlit_app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DATABASE_URL
+        value: sqlite:///database/medical_ai.db
+      - key: DEMO_MODE
+        value: "true"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: STREAMLIT_SERVER_HEADLESS
+        value: "true"
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: "false"

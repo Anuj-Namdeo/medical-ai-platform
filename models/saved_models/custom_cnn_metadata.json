@@ -1,0 +1,7 @@
+{
+  "model_name": "custom_cnn",
+  "saved_at": "2026-06-05T19:23:54.857974",
+  "parameters": 1442337,
+  "input_shape": "(None, 224, 224, 3)",
+  "output_shape": "(None, 1)"
+}

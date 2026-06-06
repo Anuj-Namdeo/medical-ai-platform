@@ -1,0 +1,7 @@
+{
+  "model_name": "densenet121",
+  "saved_at": "2026-06-06T05:26:36.007902",
+  "parameters": 7696961,
+  "input_shape": "(None, 224, 224, 3)",
+  "output_shape": "(None, 1)"
+}
